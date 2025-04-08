@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>API 키 파일 호출 + HUD 채팅창 UI</title>
+  <title>HUD 채팅창 UI + API 키 로드</title>
   <style>
     /* 전역 스타일 */
     body {
@@ -24,20 +23,6 @@
       width: 100%;
       z-index: 1000;
       box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .hud .title {
-      flex: 1;
-    }
-    .hud .apikey-load {
-      display: flex;
-      align-items: center;
-    }
-    .hud .apikey-load label {
-      margin-right: 10px;
-      font-size: 14px;
     }
     /* 채팅창 전체 컨테이너 */
     .chat-container {
@@ -107,14 +92,7 @@
 </head>
 <body>
   <!-- HUD(상단 헤더) -->
-  <div class="hud">
-    <div class="title">HUD 채팅창</div>
-    <!-- 로컬 파일에 있는 API 키를 호출하기 위한 파일 입력 -->
-    <div class="apikey-load">
-      <label for="apikeyFile">API 키 파일:</label>
-      <input type="file" id="apikeyFile" accept=".txt" />
-    </div>
-  </div>
+  <div class="hud">HUD 채팅창</div>
   
   <!-- 채팅창 컨테이너 -->
   <div class="chat-container">
@@ -124,40 +102,26 @@
         <div class="message-content">안녕하세요!</div>
       </div>
       <div class="message bot">
-        <div class="message-content">반갑습니다. API 키가 로드되었는지 확인해 주세요.</div>
+        <div class="message-content">환영합니다. 필요한 작업을 입력해 주세요.</div>
       </div>
     </div>
     <!-- 채팅 입력 영역 -->
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." />
-      <button type="button" onclick="sendMessage()">전송</button>
+      <button type="button" onclick="processInput()">전송</button>
     </div>
   </div>
   
   <script>
-    // 전역 변수에 API 키 저장 (초기값은 빈 문자열)
+    // 전역 변수 (API 키는 기본적으로 빈 문자열)
     let apiKey = "";
+    // OpenAI API 엔드포인트 (직접 호출)
     const apiUrl = "https://api.openai.com/v1/chat/completions";
-
+    
     const chatMessages = document.getElementById("chatMessages");
     const messageInput = document.getElementById("messageInput");
-    const apiKeyFileInput = document.getElementById("apikeyFile");
-
-    // 파일 선택 시 API 키를 파일에서 읽어오기 위한 이벤트 처리
-    apiKeyFileInput.addEventListener("change", function(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          apiKey = e.target.result.trim();  // 파일 내용 (API 키)을 저장하고 양쪽 공백 제거
-          // API 키가 성공적으로 로드되면 간단한 메시지 표시 (실제 운영환경에서는 UI 개선 필요)
-          appendMessage("bot", "API 키가 성공적으로 로드되었습니다.");
-        };
-        reader.readAsText(file);
-      }
-    });
-
-    // 채팅 메시지 추가 함수
+    
+    // 채팅창에 메시지 추가 함수
     function appendMessage(role, text) {
       const messageDiv = document.createElement("div");
       messageDiv.classList.add("message", role);
@@ -168,24 +132,40 @@
       
       messageDiv.appendChild(contentDiv);
       chatMessages.appendChild(messageDiv);
-      
-      // 스크롤 최하단으로 자동 이동
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-
-    // 메시지 전송 및 OpenAI API 호출 함수
-    async function sendMessage() {
+    
+    // 사용자의 입력 처리: 특별 명령어이면 API 키 파일을 로드하고, 아니면 일반 API 호출
+    async function processInput() {
       const userText = messageInput.value.trim();
       if (!userText) return;
-
-      // API 키가 아직 로드되지 않았으면 경고 후 종료
-      if (!apiKey) {
-        appendMessage("bot", "먼저 API 키 파일을 로드해 주세요.");
-        return;
-      }
       
       appendMessage("user", userText);
       messageInput.value = "";
+      
+      // 만약 사용자가 특정 명령어를 입력하면 서버에 호스팅된 텍스트 파일에서 API 키를 불러오기
+      if (userText === "다운로드 파일에 있는 텍스트에있는 키 가져와줘") {
+        // 예를 들어, 서버의 /downloads/apikey.txt 위치에 파일이 있어야 함.
+        try {
+          const response = await fetch("/downloads/apikey.txt");
+          if (!response.ok) {
+            throw new Error("파일을 불러올 수 없습니다.");
+          }
+          const keyText = await response.text();
+          apiKey = keyText.trim();
+          appendMessage("bot", "API 키가 성공적으로 로드되었습니다.");
+        } catch (error) {
+          console.error("API 키 로드 오류:", error);
+          appendMessage("bot", "API 키 로드 실패: " + error.message);
+        }
+        return;
+      }
+      
+      // API 호출: 만약 명령어가 아니라면 OpenAI API 호출 수행
+      if (!apiKey) {
+        appendMessage("bot", "먼저 API 키를 로드해 주세요 (\"다운로드 파일에 있는 텍스트에있는 키 가져와줘\")");
+        return;
+      }
       
       const requestPayload = {
         model: "gpt-3.5-turbo",
@@ -215,11 +195,11 @@
       }
     }
     
-    // 엔터키 입력 시 메시지 전송 처리
+    // 엔터키 입력 시 처리
     messageInput.addEventListener("keypress", function(event) {
       if (event.key === "Enter") {
         event.preventDefault();
-        sendMessage();
+        processInput();
       }
     });
   </script>
