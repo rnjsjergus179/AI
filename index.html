@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3D 캐릭터 HUD, 캘린더, 음성 채팅 & 외부 링크 이동</title>
+  <link rel="stylesheet" href="static/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="static/main.js" defer></script>
+</head>
+<body>
+  <div id="right-hud">
+    <h3>채팅창</h3>
+    <select id="region-select" onchange="changeRegion(this.value)">
+      <option value="" disabled selected>지역 선택</option>
+    </select>
+    <div id="chat-log"></div>
+    <div id="chat-input-area">
+      <input type="text" id="chat-input" placeholder="채팅 입력..." />
+    </div>
+  </div>
+  
+  <div id="hud-6">
+    <button onclick="startSpeechRecognition()">🎤 음성 입력</button>
+  </div>
+  
+  <div id="hud-3">
+    <iframe id="map-iframe" src="https://www.google.com/maps?q=Seoul&output=embed" frameborder="0" style="width:100%; height:100%; border:0;" allowfullscreen></iframe>
+  </div>
+  
+  <div id="left-hud">
+    <h3>캘린더</h3>
+    <div id="calendar-container">
+      <div id="calendar-header">
+        <button id="prev-month">◀</button>
+        <span id="month-year-label"></span>
+        <button id="next-month">▶</button>
+        <select id="year-select"></select>
+      </div>
+      <div id="calendar-actions">
+        <button id="delete-day-event">하루일정 삭제</button>
+        <button id="save-calendar">바탕화면 저장</button>
+      </div>
+      <div id="calendar-grid"></div>
+    </div>
+  </div>
+  
+  <div id="speech-bubble"></div>
+  
+  <div id="hud-7">버전 2.0 베타</div>
+  
+  <canvas id="canvas"></canvas>
+</body>
+</html>
