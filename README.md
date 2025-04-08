@@ -2,76 +2,114 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>Three.js 태양 예제</title>
+  <title>HUD 채팅창 UI</title>
   <style>
-    body { margin: 0; overflow: hidden; }
-    canvas { display: block; }
+    /* 전역 스타일 */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+    }
+    /* 상단 헤더(HUD) 스타일 */
+    .hud {
+      background-color: #333;
+      color: #fff;
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 20px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    /* 채팅창 전체 컨테이너 */
+    .chat-container {
+      margin-top: 70px; /* HUD 높이 만큼 여백 추가 */
+      max-width: 600px;
+      height: calc(100vh - 70px);
+      background-color: #fff;
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    /* 채팅 메시지 영역 */
+    .chat-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    /* 개별 메시지 스타일 */
+    .message {
+      margin-bottom: 15px;
+      display: flex;
+    }
+    .message.user {
+      justify-content: flex-end;
+    }
+    .message.bot {
+      justify-content: flex-start;
+    }
+    .message-content {
+      max-width: 70%;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 15px;
+      line-height: 1.4;
+    }
+    .message.user .message-content {
+      background-color: #0084ff;
+      color: #fff;
+    }
+    .message.bot .message-content {
+      background-color: #e9e9eb;
+      color: #333;
+    }
+    /* 채팅 입력 영역 */
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 15px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+    }
+    .chat-input button {
+      padding: 15px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #333;
+      color: #fff;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <!-- Three.js와 포스트 프로세싱 스크립트 로드 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/postprocessing/EffectComposer.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/postprocessing/RenderPass.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/postprocessing/UnrealBloomPass.js"></script>
-  <script>
-    // 기본 씬, 카메라, 렌더러 설정
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      75, window.innerWidth / window.innerHeight, 0.1, 1000
-    );
-    camera.position.z = 50;
-    
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    // 태양 Mesh 생성 (빛나는 재질 사용)
-    const sunGeometry = new THREE.SphereGeometry(10, 64, 64);
-    const sunMaterial = new THREE.MeshStandardMaterial({
-      color: 0xFDB813,           // 태양의 기본 색상 (주황빛)
-      emissive: 0xFDB813,        // 발광 색상
-      emissiveIntensity: 2,       // 발광 강도
-      roughness: 0.3,
-      metalness: 0.1
-    });
-    const sun = new THREE.Mesh(sunGeometry, sunMaterial);
-    scene.add(sun);
-
-    // 태양 위치에 PointLight 추가 (주변 밝기 효과)
-    const sunLight = new THREE.PointLight(0xFDB813, 2, 200);
-    sunLight.position.set(0, 0, 0);
-    scene.add(sunLight);
-
-    // 포스트 프로세싱: 블룸 효과 적용
-    const composer = new THREE.EffectComposer(renderer);
-    const renderPass = new THREE.RenderPass(scene, camera);
-    composer.addPass(renderPass);
-    
-    const bloomPass = new THREE.UnrealBloomPass(
-      new THREE.Vector2(window.innerWidth, window.innerHeight),
-      1.5, 0.4, 0.85
-    );
-    bloomPass.threshold = 0;
-    bloomPass.strength = 1.5;
-    bloomPass.radius = 0;
-    composer.addPass(bloomPass);
-    
-    // 애니메이션 루프 (태양이 서서히 회전)
-    function animate() {
-      requestAnimationFrame(animate);
-      sun.rotation.y += 0.005;
-      composer.render();
-    }
-    animate();
-    
-    // 창 크기 변경 대응
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      composer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
+  <!-- HUD(상단 헤더) -->
+  <div class="hud">HUD 채팅창</div>
+  
+  <!-- 채팅창 컨테이너 -->
+  <div class="chat-container">
+    <!-- 메시지 영역 -->
+    <div class="chat-messages">
+      <div class="message user">
+        <div class="message-content">안녕하세요!</div>
+      </div>
+      <div class="message bot">
+        <div class="message-content">반갑습니다. 무엇을 도와드릴까요?</div>
+      </div>
+    </div>
+    <!-- 입력창 -->
+    <div class="chat-input">
+      <input type="text" placeholder="메시지를 입력하세요..." />
+      <button type="button">전송</button>
+    </div>
+  </div>
 </body>
 </html>
